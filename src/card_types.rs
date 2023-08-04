@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
-pub(crate) struct CardTypes(HashMap<&'static str, CardTypeInner>);
+pub(crate) struct CardTypes(BTreeMap<&'static str, CardTypeInner>);
 
 impl CardTypes {
     pub fn new() -> CardTypes {
@@ -259,7 +259,7 @@ impl CardTypes {
                 },
             ),
         ];
-        let card_types = HashMap::from(cards);
+        let card_types = BTreeMap::from(cards);
 
         CardTypes(card_types)
     }
