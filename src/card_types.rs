@@ -9,7 +9,6 @@ use crate::{
 ///
 /// The `CreditCardPool` struct is a wrapper around a `BTreeMap` of `CreditCardType`s.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreditCardPool(BTreeMap<&'static str, CreditCardType>);
 
 impl CreditCardPool {
@@ -399,7 +398,6 @@ impl Default for CreditCardPool {
 ///
 /// Used in the return value of [`CreditCardPool::get_credit_card_type`] and to insert new card types into the pool.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreditCardType {
     pub nice_type: &'static str,
     pub type_: &'static str,
@@ -429,7 +427,6 @@ impl Default for CreditCardType {
 
 /// Information about the code on the back of a credit card.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Code {
     pub name: &'static str,
     pub size: u32,
