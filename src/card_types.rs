@@ -19,6 +19,12 @@ impl CreditCardPool {
         CreditCardPool::default()
     }
 
+    /// Create a new empty `CreditCardPool`.
+    #[must_use]
+    pub fn new_empty() -> CreditCardPool {
+        CreditCardPool(BTreeMap::new())
+    }
+
     /// Inserts a new card type into the pool.
     ///
     /// If a card type with the same type already exists, it will be overwritten. This can be used to modify the existing card types.
