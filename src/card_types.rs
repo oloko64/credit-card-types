@@ -358,7 +358,7 @@ fn add_best_match_to_results<'a, 'b>(
     Ok(())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CardTypeInner {
     pub nice_type: &'static str,
     pub type_: &'static str,
@@ -369,7 +369,7 @@ pub struct CardTypeInner {
     pub match_strength: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Code {
     pub name: &'static str,
     pub size: i32,
@@ -377,10 +377,41 @@ pub struct Code {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
 
+    enum Matcher {
+        CardNumber(&'static str),
+        ShouldMatch(&'static [&'static str]),
+        ShouldMatchCode(Code),
+    }
+
+    impl Matcher {
+        fn get_card_number(&self) -> &'static str {
+            match self {
+                Matcher::CardNumber(card_number) => card_number,
+                _ => panic!("Should not be called"),
+            }
+        }
+
+        fn get_should_match(&self) -> &'static [&'static str] {
+            match self {
+                Matcher::ShouldMatch(should_match) => should_match,
+                _ => panic!("Should not be called"),
+            }
+        }
+
+        fn get_code(&self) -> Code {
+            match self {
+                Matcher::ShouldMatchCode(code) => code.clone(),
+                _ => panic!("Should not be called"),
+            }
+        }
+    }
+
     #[test]
-    fn test_card_types() {
+    fn test_single_card_types() {
         let card_tests = [
             ["411", "visa"],
             ["4111111111111111", "visa"],
@@ -523,6 +554,217 @@ mod tests {
         for test in card_tests.iter() {
             let card_type = card_types.get_credit_card_type(test[0]).unwrap();
             assert_eq!(card_type[0].type_, test[1], "Failed for {}", test[0]);
+        }
+    }
+
+    #[test]
+    fn test_multiple_card_types() {
+        use Matcher::*;
+        let card_tests = [
+            ([CardNumber(""), ShouldMatch(&[])]),
+            ([CardNumber("2"), ShouldMatch(&["mastercard", "jcb", "mir"])]),
+            ([
+                CardNumber("3"),
+                ShouldMatch(&["american-express", "diners-club", "jcb"]),
+            ]),
+            ([
+                CardNumber("5"),
+                ShouldMatch(&["mastercard", "maestro", "elo"]),
+            ]),
+            ([CardNumber("50"), ShouldMatch(&["maestro", "elo"])]),
+            [
+                CardNumber("6"),
+                ShouldMatch(&[
+                    "discover",
+                    "unionpay",
+                    "maestro",
+                    "elo",
+                    "hiper",
+                    "hipercard",
+                ]),
+            ],
+            [
+                CardNumber("60"),
+                ShouldMatch(&["discover", "maestro", "hipercard"]),
+            ],
+            [CardNumber("601"), ShouldMatch(&["discover", "maestro"])],
+            [CardNumber("64"), ShouldMatch(&["discover", "maestro"])],
+            [
+                CardNumber("62"),
+                ShouldMatch(&["unionpay", "maestro", "elo"]),
+            ],
+            [CardNumber("4"), ShouldMatch(&["visa", "maestro", "elo"])],
+            [CardNumber("43"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("431"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("4312"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("43127"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("45141"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("45739"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("40117"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("43893"), ShouldMatch(&["visa", "elo"])],
+            [CardNumber("45763"), ShouldMatch(&["visa", "elo"])],
+            [
+                CardNumber("6277"),
+                ShouldMatch(&["unionpay", "maestro", "elo"]),
+            ],
+            [
+                CardNumber("62778"),
+                ShouldMatch(&["unionpay", "maestro", "elo"]),
+            ],
+            [CardNumber("63"), ShouldMatch(&["maestro", "elo", "hiper"])],
+            [CardNumber("636"), ShouldMatch(&["maestro", "elo"])],
+            [CardNumber("6362"), ShouldMatch(&["maestro", "elo"])],
+            [CardNumber("63629"), ShouldMatch(&["maestro", "elo"])],
+            [CardNumber("637"), ShouldMatch(&["maestro", "hiper"])],
+            [CardNumber("637374"), ShouldMatch(&["maestro", "hiper"])],
+            [CardNumber("637433"), ShouldMatch(&["maestro", "hiper"])],
+            [CardNumber("606"), ShouldMatch(&["maestro", "hipercard"])],
+            [
+                CardNumber("627"),
+                ShouldMatch(&["unionpay", "maestro", "elo"]),
+            ],
+            [CardNumber("6062"), ShouldMatch(&["maestro", "hipercard"])],
+            [CardNumber("6370"), ShouldMatch(&["maestro", "hiper"])],
+            [CardNumber("6376"), ShouldMatch(&["maestro", "hiper"])],
+            [CardNumber("6375"), ShouldMatch(&["maestro", "hiper"])],
+            [
+                CardNumber("65"),
+                ShouldMatch(&["discover", "maestro", "elo"]),
+            ],
+            [
+                CardNumber("655"),
+                ShouldMatch(&["discover", "maestro", "elo"]),
+            ],
+            [
+                CardNumber("6550"),
+                ShouldMatch(&["discover", "maestro", "elo"]),
+            ],
+            [
+                CardNumber("65502"),
+                ShouldMatch(&["discover", "maestro", "elo"]),
+            ],
+        ];
+
+        let card_types = CardTypes::new();
+
+        for test in card_tests.iter() {
+            let card_types = card_types
+                .get_credit_card_type(test[0].get_card_number())
+                .unwrap();
+            let mut card_names = card_types.iter().map(|card| card.type_).collect::<Vec<_>>();
+            card_names.sort();
+            let mut should_match = test[1].get_should_match().to_vec();
+            should_match.sort();
+            assert_eq!(
+                card_names,
+                should_match,
+                "Failed for {}",
+                test[0].get_card_number()
+            );
+        }
+    }
+
+    #[test]
+    fn test_invalid_card_types() {
+        let card_tests = [
+            "0", "12", "123", "181", "1802", "221", "222099", "2721", "212", "2132", "306", "31",
+            "32", "33", "7", "9",
+        ];
+
+        let card_types = CardTypes::new();
+        for test in card_tests.iter() {
+            let card_type = card_types.get_credit_card_type(test).unwrap();
+            assert_eq!(card_type.len(), 0, "Failed for {}", test);
+        }
+    }
+
+    #[test]
+    fn test_card_ccv() {
+        use Matcher::*;
+
+        let card_tests = [
+            [
+                CardNumber("5454545454545454"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVC",
+                }),
+            ],
+            [
+                CardNumber("4111111111111111"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVV",
+                }),
+            ],
+            [
+                CardNumber("378734493671000"),
+                ShouldMatchCode(Code {
+                    size: 4,
+                    name: "CID",
+                }),
+            ],
+            [
+                CardNumber("6011000990139424"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CID",
+                }),
+            ],
+            [
+                CardNumber("30569309025904"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVV",
+                }),
+            ],
+            [
+                CardNumber("30569309025904"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVV",
+                }),
+            ],
+            [
+                CardNumber("6220558812340000"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVN",
+                }),
+            ],
+            [
+                CardNumber("6304000000000000"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVC",
+                }),
+            ],
+            [
+                CardNumber("2200000000000000"),
+                ShouldMatchCode(Code {
+                    size: 3,
+                    name: "CVP2",
+                }),
+            ],
+        ];
+
+        let card_types = CardTypes::new();
+
+        for test in card_tests.iter() {
+            let card_types = card_types
+                .get_credit_card_type(test[0].get_card_number())
+                .unwrap();
+            let card_names = card_types
+                .iter()
+                .map(|card| card.code.clone())
+                .collect::<Vec<_>>();
+            let should_match = test[1].get_code();
+            assert_eq!(
+                card_names,
+                vec![should_match],
+                "Failed for {}",
+                test[0].get_card_number()
+            );
         }
     }
 }
