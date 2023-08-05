@@ -1,5 +1,7 @@
 # Credit Card Types
 
+[![Rust Workflow](https://github.com/OLoKo64/credit-card-types/actions/workflows/rust.yml/badge.svg)](https://github.com/OLoKo64/credit-card-types/actions/workflows/rust.yml)
+
 The Credit Card Type library for Rust provides a utility method to determine the type of credit card based on both fully qualified and partial card numbers.
 
 ## Features
