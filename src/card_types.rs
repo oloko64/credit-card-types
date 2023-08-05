@@ -363,8 +363,8 @@ pub struct CreditCardType {
     pub nice_type: &'static str,
     pub type_: &'static str,
     pub patterns: &'static [&'static [&'static str]],
-    pub gaps: &'static [i32],
-    pub lengths: &'static [i32],
+    pub gaps: &'static [u32],
+    pub lengths: &'static [u32],
     pub code: Code,
     pub match_strength: u32,
 }
@@ -389,5 +389,5 @@ impl Default for CreditCardType {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Code {
     pub name: &'static str,
-    pub size: i32,
+    pub size: u32,
 }

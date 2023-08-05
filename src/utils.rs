@@ -24,10 +24,16 @@ fn match_range(
         max_len_to_check = card_number.len();
     }
     let str_slice = &card_number[..max_len_to_check];
-    let int_repr = str_slice.parse::<i32>()?;
+    let int_representation = str_slice.parse::<i32>()?;
 
     let min = &min[..str_slice.len()];
     let max = &max[..str_slice.len()];
 
-    Ok(int_repr >= min.parse::<i32>()? && int_repr <= max.parse::<i32>()?)
+    let min_int_representation = min.parse::<i32>()?;
+    let max_int_representation = max.parse::<i32>()?;
+
+    Ok(
+        int_representation >= min_int_representation
+            && int_representation <= max_int_representation,
+    )
 }
