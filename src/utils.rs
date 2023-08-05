@@ -1,9 +1,6 @@
-use crate::errors::CardTypeError;
+use crate::{errors::CardTypeError, CreditCardType};
 
-pub fn matches(
-    card_number: &str,
-    pattern: &'static [&'static str],
-) -> Result<bool, CardTypeError> {
+pub fn matches(card_number: &str, pattern: &'static [&'static str]) -> Result<bool, CardTypeError> {
     if pattern.len() == 1 {
         return Ok(matches_pattern(card_number, pattern[0]));
     }
@@ -38,4 +35,54 @@ fn match_range(
         int_representation >= min_int_representation
             && int_representation <= max_int_representation,
     )
+}
+
+pub fn find_best_match<'a>(results: &'a mut [&mut CreditCardType]) -> Option<&'a CreditCardType> {
+    if !can_determine_best_match(results) {
+        return None;
+    }
+
+    let mut best_match_result: Option<&&mut CreditCardType> = None;
+
+    for card_type in results.iter() {
+        if best_match_result.is_none()
+            || card_type.match_strength > best_match_result.as_ref()?.match_strength
+        {
+            best_match_result = Some(card_type);
+        }
+    }
+
+    best_match_result.map(std::ops::Deref::deref)
+}
+
+fn can_determine_best_match(results: &[&mut CreditCardType]) -> bool {
+    let number_of_results_with_max_strength = results
+        .iter()
+        .filter(|card_type| card_type.match_strength >= 1)
+        .count();
+
+    number_of_results_with_max_strength > 1 && number_of_results_with_max_strength == results.len()
+}
+
+pub fn add_best_match_to_results<'a>(
+    card_number: &str,
+    card_type: &'a mut CreditCardType,
+    results: &mut Vec<&'a mut CreditCardType>,
+) -> Result<(), CardTypeError> {
+    for pattern in card_type.patterns.iter() {
+        if !matches(card_number, pattern)? {
+            continue;
+        }
+
+        let pattern_length = pattern[0].len();
+
+        if card_number.len() >= pattern_length {
+            card_type.match_strength = u32::try_from(pattern_length)?;
+        }
+
+        results.push(card_type);
+        break;
+    }
+
+    Ok(())
 }

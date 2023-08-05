@@ -1,4 +1,4 @@
-use card_types::{Code, CreditCardPool, CreditCardType};
+use credit_card_types::{Code, CreditCardPool, CreditCardType};
 
 enum Matcher {
     CardNumber(&'static str),
@@ -180,7 +180,23 @@ fn test_single_card_types() {
 fn test_multiple_card_types() {
     use Matcher::*;
     let card_tests = [
-        ([CardNumber(""), ShouldMatch(&[])]),
+        ([
+            CardNumber(""),
+            ShouldMatch(&[
+                "american-express",
+                "diners-club",
+                "discover",
+                "elo",
+                "hiper",
+                "hipercard",
+                "jcb",
+                "maestro",
+                "mastercard",
+                "mir",
+                "unionpay",
+                "visa",
+            ]),
+        ]),
         ([CardNumber("2"), ShouldMatch(&["mastercard", "jcb", "mir"])]),
         ([
             CardNumber("3"),

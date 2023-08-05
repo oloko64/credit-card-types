@@ -1,8 +1,18 @@
 [package]
-name = "card-types"
-version = "0.1.0"
+name = "credit_card_types"
+version = "0.1.100"
 edition = "2021"
+authors = ["OLoKo64 <reinaldorozatoj.11cg1@aleeas.com>"]
+description = "Detect credit card types by number"
+categories = ["finance"]
+keywords = ["card", "credit-card", "validation", "card-types"]
+repository = "https://github.com/OLoKo64/credit-card-types"
+license = "MIT"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[example]]
+name = "examples"
 
 [dependencies]

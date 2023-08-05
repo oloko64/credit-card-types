@@ -1,11 +1,133 @@
 use std::collections::BTreeMap;
 
-use crate::errors::CardTypeError;
+use crate::{
+    errors::CardTypeError,
+    utils::{add_best_match_to_results, find_best_match},
+};
 
+/// A struct representing all credit card types.
+///
+/// The `CreditCardPool` struct is a wrapper around a `BTreeMap` of `CreditCardType`s.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreditCardPool(BTreeMap<&'static str, CreditCardType>);
 
 impl CreditCardPool {
+    /// Create a new `CreditCardPool` with the default credit card types.
+    #[must_use]
     pub fn new() -> CreditCardPool {
+        CreditCardPool::default()
+    }
+
+    /// Inserts a new card type into the pool.
+    ///
+    /// If a card type with the same type already exists, it will be overwritten. This can be used to modify the existing card types.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use credit_card_types::{CreditCardPool, CreditCardType};
+    ///
+    /// let mut pool = CreditCardPool::new();
+    ///
+    /// pool.insert_card_type(CreditCardType::default());
+    ///
+    /// println!("{:?}", pool.get_credit_card_type("123456789"));
+    /// ```
+    pub fn insert_card_type(&mut self, card_type: CreditCardType) {
+        self.0.insert(card_type.type_, card_type);
+    }
+
+    /// Removes a card type from the pool.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use credit_card_types::{CreditCardPool, CreditCardType};
+    ///
+    /// let mut pool = CreditCardPool::new();
+    ///
+    /// pool.remove_card_type("visa");
+    ///
+    /// println!("{:?}", pool.get_all_card_types());
+    /// ```
+    pub fn remove_card_type(&mut self, type_: &str) {
+        self.0.remove(type_);
+    }
+
+    /// Returns all the cards that match the given card number.
+    ///
+    /// If it returns an empty vector, it means that no card type matches the given card number.
+    ///
+    /// If it returns a vector with more than one element, it means that more than one card type matches the given card number.
+    /// This can happen if the card number is too short to be identified as a specific card type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use credit_card_types::CreditCardPool;
+    ///
+    /// let pool = CreditCardPool::new();
+    ///
+    /// let result = pool.get_credit_card_type("4111111111111111").unwrap();
+    ///
+    /// println!("{:?}", result);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// If the card number is invalid, it will return an error. If you pass a letter for example, it will return an error.
+    pub fn get_credit_card_type(
+        &self,
+        card_number: impl AsRef<str>,
+    ) -> Result<Vec<CreditCardType>, CardTypeError> {
+        let card_number = card_number.as_ref();
+
+        let mut all_cards = self.get_all_card_types();
+        if card_number.is_empty() {
+            return Ok(all_cards);
+        }
+
+        let mut results = Vec::new();
+
+        for card_type in &mut all_cards {
+            add_best_match_to_results(card_number, card_type, &mut results)?;
+        }
+
+        let best_match = find_best_match(&mut results);
+
+        if let Some(best_match) = best_match {
+            return Ok(vec![best_match.clone()]);
+        }
+
+        Ok(results
+            .iter()
+            .map(|card_type| (*card_type).clone())
+            .collect())
+    }
+
+    /// Returns all card types in the card pool.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use credit_card_types::CreditCardPool;
+    ///
+    /// let card_pool = CreditCardPool::new();
+    ///
+    /// println!("{:?}", card_pool.get_all_card_types());
+    /// ```
+    #[must_use]
+    pub fn get_all_card_types(&self) -> Vec<CreditCardType> {
+        self.0
+            .values()
+            .map(|card_type| (*card_type).clone())
+            .collect()
+    }
+}
+
+impl Default for CreditCardPool {
+    fn default() -> Self {
         let cards = [
             (
                 "visa",
@@ -265,101 +387,13 @@ impl CreditCardPool {
 
         CreditCardPool(card_types)
     }
-
-    pub fn insert_card_type(&mut self, card_type: CreditCardType) {
-        self.0.insert(card_type.type_, card_type);
-    }
-
-    pub fn get_credit_card_type(
-        &self,
-        card_number: impl AsRef<str>,
-    ) -> Result<Vec<CreditCardType>, CardTypeError> {
-        let card_number = card_number.as_ref();
-
-        if card_number.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let mut results = Vec::new();
-        let mut all_cards = self.get_all_card_types();
-
-        for card_type in &mut all_cards {
-            add_best_match_to_results(card_number, card_type, &mut results)?;
-        }
-
-        let best_match = find_best_match(&mut results);
-
-        if let Some(best_match) = best_match {
-            return Ok(vec![best_match.clone()]);
-        }
-
-        Ok(results
-            .iter()
-            .map(|card_type| (*card_type).clone())
-            .collect())
-    }
-
-    pub fn get_all_card_types(&self) -> Vec<CreditCardType> {
-        self.0
-            .values()
-            .map(|card_type| (*card_type).clone())
-            .collect()
-    }
 }
 
-fn find_best_match<'a>(results: &'a mut [&mut CreditCardType]) -> Option<&'a CreditCardType> {
-    if !can_determine_best_match(results) {
-        return None;
-    }
-
-    let mut best_match_result: Option<&&mut CreditCardType> = None;
-
-    for card_type in results.iter() {
-        if best_match_result.is_none()
-            || card_type.match_strength > best_match_result.as_ref()?.match_strength
-        {
-            best_match_result = Some(card_type);
-        }
-    }
-
-    best_match_result.map(std::ops::Deref::deref)
-}
-
-fn can_determine_best_match(results: &[&mut CreditCardType]) -> bool {
-    let number_of_results_with_max_strength = results
-        .iter()
-        .filter(|card_type| card_type.match_strength >= 1)
-        .count();
-
-    number_of_results_with_max_strength > 1 && number_of_results_with_max_strength == results.len()
-}
-
-fn add_best_match_to_results<'a>(
-    card_number: &str,
-    card_type: &'a mut CreditCardType,
-    results: &mut Vec<&'a mut CreditCardType>,
-) -> Result<(), CardTypeError> {
-    use crate::utils::matches;
-
-    for pattern in card_type.patterns.iter() {
-        if !matches(card_number, pattern)? {
-            continue;
-        }
-
-        let pattern_length = pattern[0].len();
-
-        if card_number.len() >= pattern_length {
-            card_type.match_strength = u32::try_from(pattern_length)?;
-        }
-
-        results.push(card_type);
-        break;
-    }
-
-    Ok(())
-}
-
+/// A credit card type.
+///
+/// Used in the return value of [`CreditCardPool::get_credit_card_type`] and to insert new card types into the pool.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CreditCardType {
     pub nice_type: &'static str,
     pub type_: &'static str,
@@ -387,7 +421,9 @@ impl Default for CreditCardType {
     }
 }
 
+/// Information about the code on the back of a credit card.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Code {
     pub name: &'static str,
     pub size: u32,
