@@ -1,24 +1,26 @@
+use crate::errors::CardTypeError;
+
 pub(crate) fn matches(
     card_number: &str,
     pattern: &'static [&'static str],
-) -> Result<bool, std::num::ParseIntError> {
+) -> Result<bool, CardTypeError> {
     if pattern.len() == 1 {
         return Ok(matches_pattern(card_number, pattern[0]));
     }
 
-    Ok(match_range(card_number, pattern[0], pattern[1])?)
+    match_range(card_number, pattern[0], pattern[1])
 }
 
 fn matches_pattern(card_number: &str, pattern: &'static str) -> bool {
-    pattern.get(..card_number.len()).unwrap_or(&pattern)
-        == card_number.get(..pattern.len()).unwrap_or(&card_number)
+    pattern.get(..card_number.len()).unwrap_or(pattern)
+        == card_number.get(..pattern.len()).unwrap_or(card_number)
 }
 
 fn match_range(
     card_number: &str,
     min: &'static str,
     max: &'static str,
-) -> Result<bool, std::num::ParseIntError> {
+) -> Result<bool, CardTypeError> {
     let mut max_len_to_check = max.len();
     if max_len_to_check > card_number.len() {
         max_len_to_check = card_number.len();

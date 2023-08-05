@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use crate::errors::CardTypeError;
+
 pub struct CreditCardPool(BTreeMap<&'static str, CreditCardType>);
 
 impl CreditCardPool {
@@ -271,7 +273,7 @@ impl CreditCardPool {
     pub fn get_credit_card_type(
         &self,
         card_number: impl AsRef<str>,
-    ) -> Result<Vec<CreditCardType>, std::num::ParseIntError> {
+    ) -> Result<Vec<CreditCardType>, CardTypeError> {
         let card_number = card_number.as_ref();
 
         if card_number.is_empty() {
@@ -279,17 +281,16 @@ impl CreditCardPool {
         }
 
         let mut results = Vec::new();
-
         let mut all_cards = self.get_all_card_types();
 
-        for card_type in all_cards.iter_mut() {
-            add_best_match_to_results(card_number, card_type, &mut results)?
+        for card_type in &mut all_cards {
+            add_best_match_to_results(card_number, card_type, &mut results)?;
         }
 
         let best_match = find_best_match(&mut results);
 
         if let Some(best_match) = best_match {
-            return Ok(vec![best_match]);
+            return Ok(vec![best_match.clone()]);
         }
 
         Ok(results
@@ -306,22 +307,22 @@ impl CreditCardPool {
     }
 }
 
-fn find_best_match<'a>(results: &'a mut [&mut CreditCardType]) -> Option<CreditCardType> {
+fn find_best_match<'a>(results: &'a mut [&mut CreditCardType]) -> Option<&'a CreditCardType> {
     if !can_determine_best_match(results) {
         return None;
     }
 
-    let mut best_match_result = None;
+    let mut best_match_result: Option<&&mut CreditCardType> = None;
 
-    for card_type in results.iter_mut() {
-        if best_match_result.is_none() {
-            best_match_result = Some(card_type);
-        } else if card_type.match_strength > best_match_result.as_ref()?.match_strength {
+    for card_type in results.iter() {
+        if best_match_result.is_none()
+            || card_type.match_strength > best_match_result.as_ref()?.match_strength
+        {
             best_match_result = Some(card_type);
         }
     }
 
-    best_match_result.map(|card_type| (*card_type).clone())
+    best_match_result.map(std::ops::Deref::deref)
 }
 
 fn can_determine_best_match(results: &[&mut CreditCardType]) -> bool {
@@ -333,11 +334,11 @@ fn can_determine_best_match(results: &[&mut CreditCardType]) -> bool {
     number_of_results_with_max_strength > 1 && number_of_results_with_max_strength == results.len()
 }
 
-fn add_best_match_to_results<'a, 'b>(
+fn add_best_match_to_results<'a>(
     card_number: &str,
-    card_type: &'b mut CreditCardType,
-    results: &'a mut Vec<&'b mut CreditCardType>,
-) -> Result<(), std::num::ParseIntError> {
+    card_type: &'a mut CreditCardType,
+    results: &mut Vec<&'a mut CreditCardType>,
+) -> Result<(), CardTypeError> {
     use crate::utils::matches;
 
     for pattern in card_type.patterns.iter() {
@@ -348,7 +349,7 @@ fn add_best_match_to_results<'a, 'b>(
         let pattern_length = pattern[0].len();
 
         if card_number.len() >= pattern_length {
-            card_type.match_strength = pattern_length as u32;
+            card_type.match_strength = u32::try_from(pattern_length)?;
         }
 
         results.push(card_type);
