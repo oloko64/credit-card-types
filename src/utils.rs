@@ -1,6 +1,6 @@
 use crate::errors::CardTypeError;
 
-pub(crate) fn matches(
+pub fn matches(
     card_number: &str,
     pattern: &'static [&'static str],
 ) -> Result<bool, CardTypeError> {
