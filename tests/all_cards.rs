@@ -23,7 +23,7 @@ impl Matcher {
 
     fn get_code(&self) -> Code {
         match self {
-            Matcher::ShouldMatchCode(code) => code.clone(),
+            Matcher::ShouldMatchCode(code) => *code,
             _ => panic!("Should not be called"),
         }
     }
@@ -389,10 +389,7 @@ fn test_card_ccv() {
         let card_types = card_types
             .get_credit_card_type(test[0].get_card_number())
             .unwrap();
-        let card_names = card_types
-            .iter()
-            .map(|card| card.code.clone())
-            .collect::<Vec<_>>();
+        let card_names = card_types.iter().map(|card| card.code).collect::<Vec<_>>();
         let should_match = test[1].get_code();
         assert_eq!(
             card_names,
@@ -420,10 +417,7 @@ fn test_add_custom_card() {
     };
     card_types.insert_card_type(card_type);
     let card_types = card_types.get_credit_card_type("1234567890123456").unwrap();
-    let card_names = card_types
-        .iter()
-        .map(|card| card.type_.clone())
-        .collect::<Vec<_>>();
+    let card_names = card_types.iter().map(|card| card.type_).collect::<Vec<_>>();
     assert_eq!(card_names, vec!["custom".to_string()]);
     assert_eq!(card_types[0].match_strength, 16);
 }
@@ -436,10 +430,7 @@ fn test_create_default_card_type() {
 
     let card_types = card_types.get_credit_card_type("1234567890123456").unwrap();
 
-    let card_names = card_types
-        .iter()
-        .map(|card| card.type_.clone())
-        .collect::<Vec<_>>();
+    let card_names = card_types.iter().map(|card| card.type_).collect::<Vec<_>>();
 
     assert_eq!(card_names, vec!["default".to_string()]);
 }

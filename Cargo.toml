@@ -1,6 +1,6 @@
 [package]
 name = "credit_card_types"
-version = "0.1.100"
+version = "0.1.120"
 edition = "2021"
 authors = ["OLoKo64 <reinaldorozatoj.11cg1@aleeas.com>"]
 description = "Detect credit card types by number"

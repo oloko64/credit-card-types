@@ -99,16 +99,16 @@ impl CreditCardPool {
             add_best_match_to_results(card_number, card_type, &mut results)?;
         }
 
-        let best_match = find_best_match(&mut results);
+        let result_deref: Vec<&CreditCardType> =
+            results.into_iter().map(|card_type| &*card_type).collect();
+
+        let best_match = find_best_match(&result_deref);
 
         if let Some(best_match) = best_match {
-            return Ok(vec![best_match.clone()]);
+            return Ok(vec![*best_match]);
         }
 
-        Ok(results
-            .iter()
-            .map(|card_type| (*card_type).clone())
-            .collect())
+        Ok(result_deref.into_iter().copied().collect())
     }
 
     /// Returns all card types in the card pool.
@@ -124,10 +124,7 @@ impl CreditCardPool {
     /// ```
     #[must_use]
     pub fn get_all_card_types(&self) -> Vec<CreditCardType> {
-        self.0
-            .values()
-            .map(|card_type| (*card_type).clone())
-            .collect()
+        self.0.values().copied().collect()
     }
 }
 
@@ -397,7 +394,7 @@ impl Default for CreditCardPool {
 /// A credit card type.
 ///
 /// Used in the return value of [`CreditCardPool::get_credit_card_type`] and to insert new card types into the pool.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CreditCardType {
     pub nice_type: &'static str,
     pub type_: &'static str,
@@ -426,7 +423,7 @@ impl Default for CreditCardType {
 }
 
 /// Information about the code on the back of a credit card.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Code {
     pub name: &'static str,
     pub size: u32,
