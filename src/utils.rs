@@ -37,7 +37,7 @@ fn match_range(
     )
 }
 
-pub fn find_best_match<'a>(results: &'a [&CreditCardType]) -> Option<&'a CreditCardType> {
+pub fn find_best_match<'a>(results: &[&'a CreditCardType]) -> Option<&'a CreditCardType> {
     if !can_determine_best_match(results) {
         return None;
     }
@@ -67,7 +67,7 @@ fn can_determine_best_match(results: &[&CreditCardType]) -> bool {
 pub fn add_best_match_to_results<'a>(
     card_number: &str,
     card_type: &'a mut CreditCardType,
-    results: &mut Vec<&'a mut CreditCardType>,
+    results: &mut Vec<&'a CreditCardType>,
 ) -> Result<(), CardTypeError> {
     for pattern in card_type.patterns {
         if !matches(card_number, pattern)? {

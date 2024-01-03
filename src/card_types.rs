@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_lines)]
+
 use std::collections::BTreeMap;
 
 use crate::{
@@ -99,16 +101,13 @@ impl CreditCardPool {
             add_best_match_to_results(card_number, card_type, &mut results)?;
         }
 
-        let result_deref: Vec<&CreditCardType> =
-            results.into_iter().map(|card_type| &*card_type).collect();
-
-        let best_match = find_best_match(&result_deref);
+        let best_match = find_best_match(&results);
 
         if let Some(best_match) = best_match {
             return Ok(vec![*best_match]);
         }
 
-        Ok(result_deref.into_iter().copied().collect())
+        Ok(results.into_iter().copied().collect())
     }
 
     /// Returns all card types in the card pool.
