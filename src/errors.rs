@@ -25,4 +25,11 @@ impl From<std::num::TryFromIntError> for CardTypeError {
     }
 }
 
-impl std::error::Error for CardTypeError {}
+impl std::error::Error for CardTypeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CardTypeError::ParseIntError(err) => Some(err),
+            CardTypeError::TryFromIntError(err) => Some(err),
+        }
+    }
+}
