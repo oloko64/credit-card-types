@@ -33,15 +33,15 @@ impl Matcher {
 
 #[test]
 fn implement_all_traits() {
-    fn assert_all_traits<T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash>() {}
-    assert_all_traits::<CreditCardPool>();
-    assert_all_traits::<CreditCardType>();
-    assert_all_traits::<Code>();
+    fn assert_common_traits<T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash>() {}
+    assert_common_traits::<CreditCardPool>();
+    assert_common_traits::<CreditCardType>();
+    assert_common_traits::<Code>();
 
-    fn assert_send_sync<T: Send + Sync>() {}
-    assert_send_sync::<CreditCardPool>();
-    assert_send_sync::<CreditCardType>();
-    assert_send_sync::<Code>();
+    fn assert_is_normal<T: Send + Sync + Sized + Unpin>() {}
+    assert_is_normal::<CreditCardPool>();
+    assert_is_normal::<CreditCardType>();
+    assert_is_normal::<Code>();
 
     fn assert_default<T: Default>() {}
     assert_default::<CreditCardPool>();
