@@ -10,7 +10,7 @@ use crate::{
 /// A struct representing all credit card types.
 ///
 /// The `CreditCardPool` struct is a wrapper around a `BTreeMap` of `CreditCardType`s.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CreditCardPool(BTreeMap<&'static str, CreditCardType>);
 
 impl CreditCardPool {
@@ -104,10 +104,10 @@ impl CreditCardPool {
         let best_match = find_best_match(&results);
 
         if let Some(best_match) = best_match {
-            return Ok(vec![*best_match]);
+            return Ok(vec![best_match.clone()]);
         }
 
-        Ok(results.into_iter().copied().collect())
+        Ok(results.into_iter().cloned().collect())
     }
 
     /// Returns all card types in the card pool.
@@ -123,7 +123,7 @@ impl CreditCardPool {
     /// ```
     #[must_use]
     pub fn get_all_card_types(&self) -> Vec<CreditCardType> {
-        self.0.values().copied().collect()
+        self.0.values().cloned().collect()
     }
 }
 
@@ -393,7 +393,7 @@ impl Default for CreditCardPool {
 /// A credit card type.
 ///
 /// Used in the return value of [`CreditCardPool::get_credit_card_type`] and to insert new card types into the pool.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CreditCardType {
     pub nice_type: &'static str,
     pub type_: &'static str,
@@ -422,7 +422,7 @@ impl Default for CreditCardType {
 }
 
 /// Information about the code on the back of a credit card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Code {
     pub name: &'static str,
     pub size: u32,

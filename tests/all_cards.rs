@@ -1,3 +1,5 @@
+use core::fmt::Debug;
+use core::hash::Hash;
 use credit_card_types::{Code, CreditCardPool, CreditCardType};
 
 enum Matcher {
@@ -23,10 +25,27 @@ impl Matcher {
 
     fn get_code(&self) -> Code {
         match self {
-            Matcher::ShouldMatchCode(code) => *code,
+            Matcher::ShouldMatchCode(code) => code.clone(),
             _ => panic!("Should not be called"),
         }
     }
+}
+
+#[test]
+fn implement_all_traits() {
+    fn assert_common_traits<T: Debug + Clone + PartialEq + Eq + PartialOrd + Ord + Hash>() {}
+    assert_common_traits::<CreditCardPool>();
+    assert_common_traits::<CreditCardType>();
+    assert_common_traits::<Code>();
+
+    fn assert_is_normal<T: Send + Sync + Sized + Unpin>() {}
+    assert_is_normal::<CreditCardPool>();
+    assert_is_normal::<CreditCardType>();
+    assert_is_normal::<Code>();
+
+    fn assert_default<T: Default>() {}
+    assert_default::<CreditCardPool>();
+    assert_default::<CreditCardType>();
 }
 
 #[test]
@@ -389,7 +408,10 @@ fn test_card_ccv() {
         let card_types = card_types
             .get_credit_card_type(test[0].get_card_number())
             .unwrap();
-        let card_names = card_types.iter().map(|card| card.code).collect::<Vec<_>>();
+        let card_names = card_types
+            .iter()
+            .map(|card| card.code.clone())
+            .collect::<Vec<_>>();
         let should_match = test[1].get_code();
         assert_eq!(
             card_names,
